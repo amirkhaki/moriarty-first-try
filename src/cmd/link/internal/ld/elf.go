@@ -795,7 +795,7 @@ func elfwritefreebsdsig(out *OutBuf) int {
 	out.Write32(ELF_NOTE_FREEBSD_DESCSZ)
 	out.Write32(ELF_NOTE_FREEBSD_FEATURE_CTL_TAG)
 	out.WriteString(ELF_NOTE_FREEBSD_NAME)
-	if *flagRace {
+	if isFlagRace() {
 		// The race detector can't handle ASLR, turn the ASLR off when compiling with -race.
 		out.Write32(ELF_NOTE_FREEBSD_FCTL_ASLR_DISABLE)
 	} else {
@@ -1451,7 +1451,7 @@ func (ctxt *Link) doelf() {
 	}
 	if ctxt.IsNetbsd() {
 		shstrtabAddstring(".note.netbsd.ident")
-		if *flagRace {
+		if isFlagRace() { 
 			shstrtabAddstring(".note.netbsd.pax")
 		}
 	}
@@ -1866,7 +1866,7 @@ func asmbElf(ctxt *Link) {
 		}
 		return pnote
 	}
-	if *flagRace && ctxt.IsNetbsd() {
+	if isFlagRace() && ctxt.IsNetbsd() {
 		sh := elfshname(".note.netbsd.pax")
 		resoff -= int64(elfnetbsdpax(sh, uint64(startva), uint64(resoff)))
 		phsh(getpnote(), sh)
@@ -2383,7 +2383,7 @@ elfobj:
 			a += int64(elfwritegobuildid(ctxt.Out))
 		}
 	}
-	if *flagRace && ctxt.IsNetbsd() {
+	if isFlagRace() && ctxt.IsNetbsd() {
 		a += int64(elfwritenetbsdpax(ctxt.Out))
 	}
 

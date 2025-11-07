@@ -215,6 +215,10 @@ func reflect_typedmemmove(typ *_type, dst, src unsafe.Pointer) {
 		raceWriteObjectPC(typ, dst, sys.GetCallerPC(), abi.FuncPCABIInternal(reflect_typedmemmove))
 		raceReadObjectPC(typ, src, sys.GetCallerPC(), abi.FuncPCABIInternal(reflect_typedmemmove))
 	}
+	if race2enabled {
+		race2WriteObjectPC(typ, dst, sys.GetCallerPC(), abi.FuncPCABIInternal(reflect_typedmemmove))
+		race2ReadObjectPC(typ, src, sys.GetCallerPC(), abi.FuncPCABIInternal(reflect_typedmemmove))
+	}
 	if msanenabled {
 		msanwrite(dst, typ.Size_)
 		msanread(src, typ.Size_)
@@ -291,6 +295,12 @@ func typedslicecopy(typ *_type, dstPtr unsafe.Pointer, dstLen int, srcPtr unsafe
 		pc := abi.FuncPCABIInternal(slicecopy)
 		racewriterangepc(dstPtr, uintptr(n)*typ.Size_, callerpc, pc)
 		racereadrangepc(srcPtr, uintptr(n)*typ.Size_, callerpc, pc)
+	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		pc := abi.FuncPCABIInternal(slicecopy)
+		race2writerangepc(dstPtr, uintptr(n)*typ.Size_, callerpc, pc)
+		race2readrangepc(srcPtr, uintptr(n)*typ.Size_, callerpc, pc)
 	}
 	if msanenabled {
 		msanwrite(dstPtr, uintptr(n)*typ.Size_)

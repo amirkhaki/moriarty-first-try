@@ -345,7 +345,7 @@ func (a *userArena) free() {
 	// Note that active's reference is always the last reference in refs.
 	s = a.active
 	if s != nil {
-		if raceenabled || msanenabled || asanenabled {
+		if isRaceEnabled || msanenabled || asanenabled {
 			// Don't reuse arenas with sanitizers enabled. We want to catch
 			// any use-after-free errors aggressively.
 			freeUserArenaChunk(s, a.refs[len(a.refs)-1])
@@ -782,6 +782,11 @@ func newUserArenaChunk() (unsafe.Pointer, *mspan) {
 		racemalloc(unsafe.Pointer(span.base()), span.elemsize)
 	}
 
+	if race2enabled {
+		// TODO(mknyszek): Track individual objects.
+		race2malloc(unsafe.Pointer(span.base()), span.elemsize)
+	}
+
 	if msanenabled {
 		// TODO(mknyszek): Track individual objects.
 		msanmalloc(unsafe.Pointer(span.base()), span.elemsize)
@@ -909,6 +914,10 @@ func (s *mspan) setUserArenaChunkToFault() {
 		racefree(unsafe.Pointer(s.base()), s.elemsize)
 	}
 
+	if race2enabled {
+		race2free(unsafe.Pointer(s.base()), s.elemsize)
+	}
+
 	systemstack(func() {
 		// Add the user arena to the quarantine list.
 		lock(&mheap_.lock)
@@ -945,6 +954,9 @@ func freeUserArenaChunk(s *mspan, x unsafe.Pointer) {
 	// of handling them at sweep time.
 	if raceenabled {
 		racefree(unsafe.Pointer(s.base()), s.elemsize)
+	}
+	if race2enabled {
+		race2free(unsafe.Pointer(s.base()), s.elemsize)
 	}
 	if msanenabled {
 		msanfree(unsafe.Pointer(s.base()), s.elemsize)
@@ -1007,7 +1019,7 @@ func (h *mheap) allocUserArenaChunk() *mspan {
 	} else {
 		// Free list was empty, so allocate a new arena.
 		hintList := &h.userArena.arenaHints
-		if raceenabled {
+		if isRaceEnabled { 
 			// In race mode just use the regular heap hints. We might fragment
 			// the address space, but the race detector requires that the heap
 			// is mapped contiguously.

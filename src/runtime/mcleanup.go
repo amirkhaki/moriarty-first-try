@@ -638,6 +638,9 @@ func runCleanups() {
 			// argument being mutated and the call to the cleanup below.
 			racefingo()
 		}
+		if race2enabled {
+			race2fingo()
+		}
 
 		gcCleanups.beginRunningCleanups()
 		for i := 0; i < int(b.n); i++ {
@@ -659,15 +662,34 @@ func runCleanups() {
 				racectx = raceEnterNewCtx()
 				raceacquire(unsafe.Pointer(fn))
 			}
+			if race2enabled {
+				// Enter a new race context so the race detector can catch
+				// potential races between cleanups, even if they execute on
+				// the same goroutine.
+				//
+				// Synchronize on fn. This would fail to find races on the
+				// closed-over values in fn (suppose fn is passed to multiple
+				// AddCleanup calls) if fn was not unique, but it is. Update
+				// the synchronization on fn if you intend to optimize it
+				// and store the cleanup function and cleanup argument on the
+				// queue directly.
+				race2release(unsafe.Pointer(fn))
+				racectx = race2EnterNewCtx()
+				race2acquire(unsafe.Pointer(fn))
+			}
 
 			// Execute the next cleanup.
 			cleanup := *(*func())(unsafe.Pointer(&fn))
 			cleanup()
 			b.cleanups[i] = nil
 
-			if raceenabled {
+			// if raceenabled {
+			// 	// Restore the old context.
+			// 	raceRestoreCtx(racectx)
+			// }
+			if race2enabled {
 				// Restore the old context.
-				raceRestoreCtx(racectx)
+				race2RestoreCtx(racectx)
 			}
 		}
 		gcCleanups.endRunningCleanups()

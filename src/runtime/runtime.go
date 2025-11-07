@@ -174,12 +174,18 @@ func (g *godebugInc) IncNonDefault() {
 		if raceenabled {
 			racereleasemerge(unsafe.Pointer(&g.inc))
 		}
+		if race2enabled {
+			race2releasemerge(unsafe.Pointer(&g.inc))
+		}
 		if !g.inc.CompareAndSwap(nil, inc) {
 			inc = g.inc.Load()
 		}
 	}
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&g.inc))
+	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&g.inc))
 	}
 	(*inc)()
 }

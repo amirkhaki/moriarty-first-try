@@ -73,6 +73,7 @@ var (
 	flagInstallSuffix = flag.String("installsuffix", "", "set package directory `suffix`")
 	flagDumpDep       = flag.Bool("dumpdep", false, "dump symbol dependency graph")
 	flagRace          = flag.Bool("race", false, "enable race detector")
+	flagRace2         = flag.Bool("race2", false, "enable race2 detector")
 	flagMsan          = flag.Bool("msan", false, "enable MSan interface")
 	flagAsan          = flag.Bool("asan", false, "enable ASan interface")
 	flagAslr          = flag.Bool("aslr", true, "enable ASLR for buildmode=c-shared on windows")
@@ -120,7 +121,9 @@ var (
 	flagW ternaryFlag
 	FlagW = new(bool) // the -w flag, computed in main from flagW
 )
-
+func isFlagRace() bool {
+	return *flagRace2 || *flagRace
+}
 // ternaryFlag is like a boolean flag, but has a default value that is
 // neither true nor false, allowing it to be set from context (e.g. from another
 // flag).

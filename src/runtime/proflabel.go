@@ -39,6 +39,9 @@ func runtime_setProfLabel(labels unsafe.Pointer) {
 	if raceenabled {
 		racereleasemerge(unsafe.Pointer(&labelSync))
 	}
+	if race2enabled {
+		race2releasemerge(unsafe.Pointer(&labelSync))
+	}
 	getg().labels = labels
 }
 

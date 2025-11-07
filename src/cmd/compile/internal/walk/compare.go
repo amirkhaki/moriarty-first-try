@@ -194,10 +194,10 @@ func walkCompare(n *ir.BinaryExpr, init *ir.Nodes) ir.Node {
 		call := ir.NewCallExpr(base.Pos, ir.OCALL, fn, nil)
 		addrCmpl := typecheck.NodAddr(cmpl)
 		addrCmpR := typecheck.NodAddr(cmpr)
-		if !types.IsNoRacePkg(types.LocalPkg) && base.Flag.Race {
+		if !types.IsNoRacePkg(types.LocalPkg) && base.Flag.IsRaceEnabled() {
 			ptrL := typecheck.Conv(typecheck.Conv(addrCmpl, types.Types[types.TUNSAFEPTR]), types.Types[types.TUINTPTR])
 			ptrR := typecheck.Conv(typecheck.Conv(addrCmpR, types.Types[types.TUNSAFEPTR]), types.Types[types.TUINTPTR])
-			raceFn := typecheck.LookupRuntime("racereadrange")
+			raceFn := typecheck.LookupRuntime(base.Flag.RacePrefix()+"readrange")
 			size := ir.NewInt(base.Pos, t.Size())
 			call.PtrInit().Append(mkcall1(raceFn, nil, init, ptrL, size))
 			call.PtrInit().Append(mkcall1(raceFn, nil, init, ptrR, size))

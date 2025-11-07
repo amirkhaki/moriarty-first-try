@@ -615,7 +615,7 @@ func (sl *sweepLocked) sweep(preserve bool) bool {
 		spanHasNoSpecials(s)
 	}
 
-	if traceAllocFreeEnabled() || debug.clobberfree != 0 || raceenabled || msanenabled || asanenabled {
+	if traceAllocFreeEnabled() || debug.clobberfree != 0 || isRaceEnabled || msanenabled || asanenabled {
 		// Find all newly freed objects.
 		mbits := s.markBitsForBase()
 		abits := s.allocBitsForIndex(0)
@@ -635,6 +635,9 @@ func (sl *sweepLocked) sweep(preserve bool) bool {
 				// User arenas are handled on explicit free.
 				if raceenabled && !s.isUserArenaChunk {
 					racefree(unsafe.Pointer(x), size)
+				}
+				if race2enabled && !s.isUserArenaChunk {
+					race2free(unsafe.Pointer(x), size)
 				}
 				if msanenabled && !s.isUserArenaChunk {
 					msanfree(unsafe.Pointer(x), size)

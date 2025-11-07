@@ -90,6 +90,10 @@ func mapiterinit(t *abi.MapType, m *maps.Map, it *linknameIter) {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(mapiterinit))
 	}
+	if race2enabled && m != nil {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(mapiterinit))
+	}
 
 	it.typ = t
 
@@ -142,6 +146,10 @@ func mapiternext(it *linknameIter) {
 	if raceenabled {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(it.it.Map()), callerpc, abi.FuncPCABIInternal(mapiternext))
+	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(it.it.Map()), callerpc, abi.FuncPCABIInternal(mapiternext))
 	}
 
 	it.it.Next()

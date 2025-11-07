@@ -189,6 +189,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if raceenabled {
 		racereadpc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(chansend))
 	}
+	if race2enabled {
+		race2readpc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(chansend))
+	}
 
 	if c.bubble != nil && getg().bubble != c.bubble {
 		fatal("send on synctest channel from outside bubble")
@@ -238,6 +241,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
 			racenotify(c, c.sendx, nil)
+		}
+		if race2enabled {
+			race2notify(c, c.sendx, nil)
 		}
 		typedmemmove(c.elemtype, qp, ep)
 		c.sendx++
@@ -329,6 +335,22 @@ func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 			// the head/tail locations only when raceenabled.
 			racenotify(c, c.recvx, nil)
 			racenotify(c, c.recvx, sg)
+			c.recvx++
+			if c.recvx == c.dataqsiz {
+				c.recvx = 0
+			}
+			c.sendx = c.recvx // c.sendx = (c.sendx+1) % c.dataqsiz
+		}
+	}
+	if race2enabled {
+		if c.dataqsiz == 0 {
+			race2sync(c, sg)
+		} else {
+			// Pretend we go through the buffer, even though
+			// we copy directly. Note that we need to increment
+			// the head/tail locations only when raceenabled.
+			race2notify(c, c.recvx, nil)
+			race2notify(c, c.recvx, sg)
 			c.recvx++
 			if c.recvx == c.dataqsiz {
 				c.recvx = 0
@@ -430,6 +452,11 @@ func closechan(c *hchan) {
 		racewritepc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(closechan))
 		racerelease(c.raceaddr())
 	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2writepc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(closechan))
+		race2release(c.raceaddr())
+	}
 
 	c.closed = 1
 
@@ -454,6 +481,9 @@ func closechan(c *hchan) {
 		if raceenabled {
 			raceacquireg(gp, c.raceaddr())
 		}
+		if race2enabled {
+			race2acquireg(gp, c.raceaddr())
+		}
 		glist.push(gp)
 	}
 
@@ -472,6 +502,9 @@ func closechan(c *hchan) {
 		sg.success = false
 		if raceenabled {
 			raceacquireg(gp, c.raceaddr())
+		}
+		if race2enabled {
+			race2acquireg(gp, c.raceaddr())
 		}
 		glist.push(gp)
 	}
@@ -571,6 +604,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			if raceenabled {
 				raceacquire(c.raceaddr())
 			}
+			if race2enabled {
+				race2acquire(c.raceaddr())
+			}
 			if ep != nil {
 				typedmemclr(c.elemtype, ep)
 			}
@@ -589,6 +625,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		if c.qcount == 0 {
 			if raceenabled {
 				raceacquire(c.raceaddr())
+			}
+			if race2enabled {
+				race2acquire(c.raceaddr())
 			}
 			unlock(&c.lock)
 			if ep != nil {
@@ -614,6 +653,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		qp := chanbuf(c, c.recvx)
 		if raceenabled {
 			racenotify(c, c.recvx, nil)
+		}
+		if race2enabled {
+			race2notify(c, c.recvx, nil)
 		}
 		if ep != nil {
 			typedmemmove(c.elemtype, ep, qp)
@@ -708,6 +750,9 @@ func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 		if raceenabled {
 			racesync(c, sg)
 		}
+		if race2enabled {
+			race2sync(c, sg)
+		}
 		if ep != nil {
 			// copy data from sender
 			recvDirect(c.elemtype, sg, ep)
@@ -721,6 +766,10 @@ func recv(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
 		if raceenabled {
 			racenotify(c, c.recvx, nil)
 			racenotify(c, c.recvx, sg)
+		}
+		if race2enabled {
+			race2notify(c, c.recvx, nil)
+			race2notify(c, c.recvx, sg)
 		}
 		// copy data from queue to receiver
 		if ep != nil {

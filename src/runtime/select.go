@@ -140,7 +140,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// statements in packages compiled without -race (e.g.,
 	// ensureSigM in runtime/signal_unix.go).
 	var pcs []uintptr
-	if raceenabled && pc0 != nil {
+	if isRaceEnabled && pc0 != nil {
 		pc1 := (*[1 << 16]uintptr)(unsafe.Pointer(pc0))
 		pcs = pc1[:ncases:ncases]
 	}
@@ -287,6 +287,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			if raceenabled {
 				racereadpc(c.raceaddr(), casePC(casi), chansendpc)
 			}
+			if race2enabled {
+				race2readpc(c.raceaddr(), casePC(casi), chansendpc)
+			}
 			if c.closed != 0 {
 				goto sclose
 			}
@@ -425,6 +428,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			raceWriteObjectPC(c.elemtype, cas.elem, casePC(casi), chanrecvpc)
 		}
 	}
+	if race2enabled {
+		if casi < nsends {
+			race2ReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
+		} else if cas.elem != nil {
+			race2WriteObjectPC(c.elemtype, cas.elem, casePC(casi), chanrecvpc)
+		}
+	}
 	if msanenabled {
 		if casi < nsends {
 			msanread(cas.elem, c.elemtype.Size_)
@@ -451,6 +461,12 @@ bufrecv:
 		}
 		racenotify(c, c.recvx, nil)
 	}
+	if race2enabled {
+		if cas.elem != nil {
+			race2WriteObjectPC(c.elemtype, cas.elem, casePC(casi), chanrecvpc)
+		}
+		race2notify(c, c.recvx, nil)
+	}
 	if msanenabled && cas.elem != nil {
 		msanwrite(cas.elem, c.elemtype.Size_)
 	}
@@ -476,6 +492,10 @@ bufsend:
 	if raceenabled {
 		racenotify(c, c.sendx, nil)
 		raceReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
+	}
+	if race2enabled {
+		race2notify(c, c.sendx, nil)
+		race2ReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
 	}
 	if msanenabled {
 		msanread(cas.elem, c.elemtype.Size_)
@@ -511,12 +531,18 @@ rclose:
 	if raceenabled {
 		raceacquire(c.raceaddr())
 	}
+	if race2enabled {
+		race2acquire(c.raceaddr())
+	}
 	goto retc
 
 send:
 	// can send to a sleeping receiver (sg)
 	if raceenabled {
 		raceReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
+	}
+	if race2enabled {
+		race2ReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
 	}
 	if msanenabled {
 		msanread(cas.elem, c.elemtype.Size_)
@@ -605,7 +631,7 @@ func reflect_rselect(cases []runtimeSelect) (int, bool) {
 
 	order := make([]uint16, 2*(nsends+nrecvs))
 	var pc0 *uintptr
-	if raceenabled {
+	if isRaceEnabled {
 		pcs := make([]uintptr, nsends+nrecvs)
 		for i := range pcs {
 			selectsetpc(&pcs[i])

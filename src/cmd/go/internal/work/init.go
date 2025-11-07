@@ -105,13 +105,13 @@ func BuildInit(loaderstate *modload.State) {
 	// Ensure that -race and -covermode are compatible.
 	if cfg.BuildCoverMode == "" {
 		cfg.BuildCoverMode = "set"
-		if cfg.BuildRace {
+		if cfg.IsBuildRace() {
 			// Default coverage mode is atomic when -race is set.
 			cfg.BuildCoverMode = "atomic"
 		}
 	}
-	if cfg.BuildRace && cfg.BuildCoverMode != "atomic" {
-		base.Fatalf(`-covermode must be "atomic", not %q, when -race is enabled`, cfg.BuildCoverMode)
+	if cfg.IsBuildRace() && cfg.BuildCoverMode != "atomic" {
+		base.Fatalf(`-covermode must be "atomic", not %q, when -race(2) is enabled`, cfg.BuildCoverMode)
 	}
 }
 
@@ -129,8 +129,13 @@ func fuzzInstrumentFlags() []string {
 }
 
 func instrumentInit() {
-	if !cfg.BuildRace && !cfg.BuildMSan && !cfg.BuildASan {
+	if !cfg.IsBuildRace() && !cfg.BuildMSan && !cfg.BuildASan {
 		return
+	}
+	if cfg.BuildRace && cfg.BuildRace2 {
+		fmt.Fprintf(os.Stderr, "go: may not use -race and -race2 simultaneously\n")
+		base.SetExitStatus(2)
+		base.Exit()
 	}
 	if cfg.BuildRace && cfg.BuildMSan {
 		fmt.Fprintf(os.Stderr, "go: may not use -race and -msan simultaneously\n")
@@ -154,6 +159,11 @@ func instrumentInit() {
 	}
 	if cfg.BuildRace && !platform.RaceDetectorSupported(cfg.Goos, cfg.Goarch) {
 		fmt.Fprintf(os.Stderr, "-race is not supported on %s/%s\n", cfg.Goos, cfg.Goarch)
+		base.SetExitStatus(2)
+		base.Exit()
+	}
+	if cfg.BuildRace2 && !platform.Race2DetectorSupported(cfg.Goos, cfg.Goarch) {
+		fmt.Fprintf(os.Stderr, "-race2 is not supported on %s/%s\n", cfg.Goos, cfg.Goarch)
 		base.SetExitStatus(2)
 		base.Exit()
 	}
@@ -186,6 +196,9 @@ func instrumentInit() {
 	}
 	if cfg.BuildASan {
 		mode = "asan"
+	}
+	if cfg.BuildRace2 {
+		mode = "race2"
 	}
 	modeFlag := "-" + mode
 
@@ -259,7 +272,7 @@ func buildModeInit() {
 		ldBuildmode = "c-shared"
 	case "default":
 		ldBuildmode = "exe"
-		if platform.DefaultPIE(cfg.Goos, cfg.Goarch, cfg.BuildRace) {
+		if platform.DefaultPIE(cfg.Goos, cfg.Goarch, cfg.IsBuildRace()) {
 			ldBuildmode = "pie"
 			if cfg.Goos != "windows" && !gccgo {
 				codegenArg = "-shared"
@@ -275,8 +288,8 @@ func buildModeInit() {
 			pkgsFilter = oneMainPkg
 		}
 	case "pie":
-		if cfg.BuildRace && !platform.DefaultPIE(cfg.Goos, cfg.Goarch, cfg.BuildRace) {
-			base.Fatalf("-buildmode=pie not supported when -race is enabled on %s/%s", cfg.Goos, cfg.Goarch)
+		if cfg.IsBuildRace() && !platform.DefaultPIE(cfg.Goos, cfg.Goarch, cfg.IsBuildRace()) {
+			base.Fatalf("-buildmode=pie not supported when -race(2) is enabled on %s/%s", cfg.Goos, cfg.Goarch)
 		}
 		if gccgo {
 			codegenArg = "-fPIE"

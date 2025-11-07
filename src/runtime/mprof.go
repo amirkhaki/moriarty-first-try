@@ -1018,6 +1018,9 @@ func copyMemProfileRecord(dst *MemProfileRecord, src profilerecord.MemProfileRec
 	if raceenabled {
 		racewriterangepc(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0), sys.GetCallerPC(), abi.FuncPCABIInternal(MemProfile))
 	}
+	if race2enabled {
+		race2writerangepc(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0), sys.GetCallerPC(), abi.FuncPCABIInternal(MemProfile))
+	}
 	if msanenabled {
 		msanwrite(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0))
 	}
@@ -1131,6 +1134,9 @@ func copyBlockProfileRecord(dst *BlockProfileRecord, src profilerecord.BlockProf
 	dst.Cycles = src.Cycles
 	if raceenabled {
 		racewriterangepc(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0), sys.GetCallerPC(), abi.FuncPCABIInternal(BlockProfile))
+	}
+	if race2enabled {
+		race2writerangepc(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0), sys.GetCallerPC(), abi.FuncPCABIInternal(BlockProfile))
 	}
 	if msanenabled {
 		msanwrite(unsafe.Pointer(&dst.Stack0[0]), unsafe.Sizeof(dst.Stack0))
@@ -1353,6 +1359,9 @@ func goroutineLeakProfileWithLabelsConcurrent(p []profilerecord.StackRecord, lab
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&labelSync))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&labelSync))
+	}
 
 	semrelease(&goroutineProfile.sema)
 	return n, true
@@ -1447,6 +1456,9 @@ func goroutineProfileWithLabelsConcurrent(p []profilerecord.StackRecord, labels 
 
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&labelSync))
+	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&labelSync))
 	}
 
 	if n != int(endOffset) {
@@ -1648,6 +1660,9 @@ func goroutineProfileWithLabelsSync(p []profilerecord.StackRecord, labels []unsa
 
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&labelSync))
+	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&labelSync))
 	}
 
 	startTheWorld(stw)

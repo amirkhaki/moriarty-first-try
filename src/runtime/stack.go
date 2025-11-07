@@ -439,6 +439,9 @@ func stackalloc(n uint32) stack {
 	if raceenabled {
 		racemalloc(v, uintptr(n))
 	}
+	if race2enabled {
+		race2malloc(v, uintptr(n))
+	}
 	if msanenabled {
 		msanmalloc(v, uintptr(n))
 	}

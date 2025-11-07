@@ -77,6 +77,11 @@ func makeslicecopy(et *_type, tolen int, fromlen int, from unsafe.Pointer) unsaf
 		pc := abi.FuncPCABIInternal(makeslicecopy)
 		racereadrangepc(from, copymem, callerpc, pc)
 	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		pc := abi.FuncPCABIInternal(makeslicecopy)
+		race2readrangepc(from, copymem, callerpc, pc)
+	}
 	if msanenabled {
 		msanread(from, copymem)
 	}
@@ -179,6 +184,10 @@ func growslice(oldPtr unsafe.Pointer, newLen, oldCap, num int, et *_type) slice 
 	if raceenabled {
 		callerpc := sys.GetCallerPC()
 		racereadrangepc(oldPtr, uintptr(oldLen*int(et.Size_)), callerpc, abi.FuncPCABIInternal(growslice))
+	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2readrangepc(oldPtr, uintptr(oldLen*int(et.Size_)), callerpc, abi.FuncPCABIInternal(growslice))
 	}
 	if msanenabled {
 		msanread(oldPtr, uintptr(oldLen*int(et.Size_)))
@@ -372,6 +381,12 @@ func slicecopy(toPtr unsafe.Pointer, toLen int, fromPtr unsafe.Pointer, fromLen 
 		pc := abi.FuncPCABIInternal(slicecopy)
 		racereadrangepc(fromPtr, size, callerpc, pc)
 		racewriterangepc(toPtr, size, callerpc, pc)
+	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		pc := abi.FuncPCABIInternal(slicecopy)
+		race2readrangepc(fromPtr, size, callerpc, pc)
+		race2writerangepc(toPtr, size, callerpc, pc)
 	}
 	if msanenabled {
 		msanread(fromPtr, size)

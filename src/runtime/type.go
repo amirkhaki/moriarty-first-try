@@ -282,11 +282,17 @@ func reflectOffsLock() {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&reflectOffs.lock))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&reflectOffs.lock))
+	}
 }
 
 func reflectOffsUnlock() {
-	if raceenabled {
-		racerelease(unsafe.Pointer(&reflectOffs.lock))
+	// if raceenabled {
+	// 	racerelease(unsafe.Pointer(&reflectOffs.lock))
+	// }
+	if race2enabled {
+		race2release(unsafe.Pointer(&reflectOffs.lock))
 	}
 	unlock(&reflectOffs.lock)
 }

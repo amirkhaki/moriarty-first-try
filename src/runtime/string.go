@@ -149,6 +149,12 @@ func slicebytetostring(buf *tmpBuf, ptr *byte, n int) string {
 			sys.GetCallerPC(),
 			abi.FuncPCABIInternal(slicebytetostring))
 	}
+	if race2enabled {
+		race2readrangepc(unsafe.Pointer(ptr),
+			uintptr(n),
+			sys.GetCallerPC(),
+			abi.FuncPCABIInternal(slicebytetostring))
+	}
 	if msanenabled {
 		msanread(unsafe.Pointer(ptr), uintptr(n))
 	}
@@ -212,6 +218,12 @@ func slicebytetostringtmp(ptr *byte, n int) string {
 			sys.GetCallerPC(),
 			abi.FuncPCABIInternal(slicebytetostringtmp))
 	}
+	if race2enabled && n > 0 {
+		race2readrangepc(unsafe.Pointer(ptr),
+			uintptr(n),
+			sys.GetCallerPC(),
+			abi.FuncPCABIInternal(slicebytetostringtmp))
+	}
 	if msanenabled && n > 0 {
 		msanread(unsafe.Pointer(ptr), uintptr(n))
 	}
@@ -260,6 +272,12 @@ func stringtoslicerune(buf *[tmpStringBufSize]rune, s string) []rune {
 func slicerunetostring(buf *tmpBuf, a []rune) string {
 	if raceenabled && len(a) > 0 {
 		racereadrangepc(unsafe.Pointer(&a[0]),
+			uintptr(len(a))*unsafe.Sizeof(a[0]),
+			sys.GetCallerPC(),
+			abi.FuncPCABIInternal(slicerunetostring))
+	}
+	if race2enabled && len(a) > 0 {
+		race2readrangepc(unsafe.Pointer(&a[0]),
 			uintptr(len(a))*unsafe.Sizeof(a[0]),
 			sys.GetCallerPC(),
 			abi.FuncPCABIInternal(slicerunetostring))

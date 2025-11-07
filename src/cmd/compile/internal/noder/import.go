@@ -104,6 +104,8 @@ func openPackage(path string) (*os.File, error) {
 		suffix := ""
 		if base.Flag.InstallSuffix != "" {
 			suffix = "_" + base.Flag.InstallSuffix
+		} else if base.Flag.Race2 {
+			suffix = "_race2"
 		} else if base.Flag.Race {
 			suffix = "_race"
 		} else if base.Flag.MSan {

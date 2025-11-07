@@ -2443,6 +2443,10 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 	if cfg.BuildRace {
 		appendSetting("-race", "true")
 	}
+
+	if cfg.BuildRace2 {
+		appendSetting("-race2", "true")
+	}
 	if tags := cfg.BuildContext.BuildTags; len(tags) > 0 {
 		appendSetting("-tags", strings.Join(tags, ","))
 	}
@@ -2654,6 +2658,9 @@ func LinkerDeps(s *modload.State, p *Package) ([]string, error) {
 	if cfg.BuildRace {
 		deps = append(deps, "runtime/race")
 	}
+	if cfg.BuildRace2 {
+		deps = append(deps, "runtime/race2")
+	}
 	// Using memory sanitizer forces an import of runtime/msan.
 	if cfg.BuildMSan {
 		deps = append(deps, "runtime/msan")
@@ -2700,7 +2707,7 @@ func externalLinkingReason(s *modload.State, p *Package) (what string) {
 	isPIE := false
 	if cfg.BuildBuildmode == "pie" {
 		isPIE = true
-	} else if cfg.BuildBuildmode == "default" && platform.DefaultPIE(cfg.BuildContext.GOOS, cfg.BuildContext.GOARCH, cfg.BuildRace) {
+	} else if cfg.BuildBuildmode == "default" && platform.DefaultPIE(cfg.BuildContext.GOOS, cfg.BuildContext.GOARCH, cfg.IsBuildRace()) {
 		isPIE = true
 	}
 	// If we are building a PIE, and we are on a system
@@ -3584,7 +3591,7 @@ func SelectCoverPackages(s *modload.State, roots []*Package, match []func(*modlo
 		// $GOROOT/src/internal/coverage/pkid.go dealing with
 		// hard-coding of runtime package IDs.
 		cmode := cfg.BuildCoverMode
-		if cfg.BuildRace && p.Standard && objabi.LookupPkgSpecial(p.ImportPath).Runtime {
+		if cfg.IsBuildRace() && p.Standard && objabi.LookupPkgSpecial(p.ImportPath).Runtime {
 			cmode = "regonly"
 		}
 

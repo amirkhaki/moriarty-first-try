@@ -4217,7 +4217,7 @@ func mallocTiny1(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4246,7 +4246,7 @@ func mallocTiny1(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -4367,7 +4367,7 @@ func mallocTiny2(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4396,7 +4396,7 @@ func mallocTiny2(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -4517,7 +4517,7 @@ func mallocTiny3(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4546,7 +4546,7 @@ func mallocTiny3(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -4667,7 +4667,7 @@ func mallocTiny4(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4696,7 +4696,7 @@ func mallocTiny4(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -4817,7 +4817,7 @@ func mallocTiny5(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4846,7 +4846,7 @@ func mallocTiny5(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -4967,7 +4967,7 @@ func mallocTiny6(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -4996,7 +4996,7 @@ func mallocTiny6(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5117,7 +5117,7 @@ func mallocTiny7(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5146,7 +5146,7 @@ func mallocTiny7(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5267,7 +5267,7 @@ func mallocTiny8(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5296,7 +5296,7 @@ func mallocTiny8(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5417,7 +5417,7 @@ func mallocTiny9(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5446,7 +5446,7 @@ func mallocTiny9(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5567,7 +5567,7 @@ func mallocTiny10(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5596,7 +5596,7 @@ func mallocTiny10(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5717,7 +5717,7 @@ func mallocTiny11(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5746,7 +5746,7 @@ func mallocTiny11(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -5867,7 +5867,7 @@ func mallocTiny12(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -5896,7 +5896,7 @@ func mallocTiny12(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -6017,7 +6017,7 @@ func mallocTiny13(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -6046,7 +6046,7 @@ func mallocTiny13(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -6167,7 +6167,7 @@ func mallocTiny14(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -6196,7 +6196,7 @@ func mallocTiny14(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}
@@ -6317,7 +6317,7 @@ func mallocTiny15(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	(*[2]uint64)(x)[0] = 0
 	(*[2]uint64)(x)[1] = 0
 
-	if !raceenabled && (constsize < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (constsize < c.tinyoffset || c.tiny == 0) {
 
 		c.tiny = uintptr(x)
 		c.tinyoffset = constsize
@@ -6346,7 +6346,7 @@ func mallocTiny15(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 
 		x = add(x, elemsize-constsize)
 	}

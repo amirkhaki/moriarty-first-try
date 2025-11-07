@@ -482,6 +482,9 @@ func deferprocat(fn func(), frame any) {
 	if raceenabled {
 		racewritepc(unsafe.Pointer(head), sys.GetCallerPC(), abi.FuncPCABIInternal(deferprocat))
 	}
+	if race2enabled {
+		race2writepc(unsafe.Pointer(head), sys.GetCallerPC(), abi.FuncPCABIInternal(deferprocat))
+	}
 	d1 := newdefer()
 	d1.fn = fn
 	for {
@@ -502,6 +505,9 @@ func deferconvert(d0 *_defer) {
 	head := d0.head
 	if raceenabled {
 		racereadpc(unsafe.Pointer(head), sys.GetCallerPC(), abi.FuncPCABIInternal(deferconvert))
+	}
+	if race2enabled {
+		race2readpc(unsafe.Pointer(head), sys.GetCallerPC(), abi.FuncPCABIInternal(deferconvert))
 	}
 	tail := d0.link
 	d0.rangefunc = false

@@ -324,6 +324,9 @@ func main() {
 	if raceenabled {
 		racefini() // does not return
 	}
+	if race2enabled {
+		race2fini() // does not return
+	}
 
 	exit(0)
 	for {
@@ -339,6 +342,9 @@ func os_beforeExit(exitCode int) {
 	runExitHooks(exitCode)
 	if exitCode == 0 && raceenabled {
 		racefini()
+	}
+	if exitCode == 0 && race2enabled {
+		race2fini()
 	}
 
 	// See comment in main, above.
@@ -854,6 +860,9 @@ func schedinit() {
 	gp := getg()
 	if raceenabled {
 		gp.racectx, raceprocctx0 = raceinit()
+	}
+	if race2enabled {
+		gp.racectx, raceprocctx0 = race2init()
 	}
 
 	sched.maxmcount = 10000
@@ -2514,6 +2523,9 @@ func oneNewExtraM() {
 	gp.goid = sched.goidgen.Add(1)
 	if raceenabled {
 		gp.racectx = racegostart(abi.FuncPCABIInternal(newextram) + sys.PCQuantum)
+	}
+	if race2enabled {
+		gp.racectx = race2gostart(abi.FuncPCABIInternal(newextram) + sys.PCQuantum)
 	}
 	// put on allg for garbage collector
 	allgadd(gp)
@@ -4416,6 +4428,24 @@ func goexit1() {
 		}
 		racegoend()
 	}
+	if race2enabled {
+		if gp := getg(); gp.bubble != nil {
+			race2releasemergeg(gp, gp.bubble.raceaddr())
+		}
+		race2goend()
+	}
+	if raceenabled {
+		if gp := getg(); gp.bubble != nil {
+			racereleasemergeg(gp, gp.bubble.raceaddr())
+		}
+		racegoend()
+	}
+	if race2enabled {
+		if gp := getg(); gp.bubble != nil {
+			race2releasemergeg(gp, gp.bubble.raceaddr())
+		}
+		race2goend()
+	}
 	trace := traceAcquire()
 	if trace.ok() {
 		trace.GoEnd()
@@ -5296,6 +5326,15 @@ func newproc1(fn *funcval, callergp *g, callerpc uintptr, parked bool, waitreaso
 			racereleasemergeg(newg, unsafe.Pointer(&labelSync))
 		}
 	}
+	if race2enabled {
+		newg.racectx = race2gostart(callerpc)
+		newg.raceignore = 0
+		if newg.labels != nil {
+			// See note in proflabel.go on labelSync's role in synchronizing
+			// with the reads in the signal handler.
+			race2releasemergeg(newg, unsafe.Pointer(&labelSync))
+		}
+	}
 	pp.goroutinesCreated++
 	releasem(mp)
 
@@ -5430,6 +5469,9 @@ retry:
 	} else {
 		if raceenabled {
 			racemalloc(unsafe.Pointer(gp.stack.lo), gp.stack.hi-gp.stack.lo)
+		}
+		if race2enabled {
+			race2malloc(unsafe.Pointer(gp.stack.lo), gp.stack.hi-gp.stack.lo)
 		}
 		if msanenabled {
 			msanmalloc(unsafe.Pointer(gp.stack.lo), gp.stack.hi-gp.stack.lo)
@@ -5806,6 +5848,14 @@ func (pp *p) init(id int32) {
 			pp.raceprocctx = raceproccreate()
 		}
 	}
+	if race2enabled && pp.raceprocctx == 0 {
+		if id == 0 {
+			pp.raceprocctx = raceprocctx0
+			raceprocctx0 = 0 // bootstrap
+		} else {
+			pp.raceprocctx = race2proccreate()
+		}
+	}
 	lockInit(&pp.timers.mu, lockRankTimers)
 
 	// This P may get timers when it starts running. Set the mask here
@@ -5884,6 +5934,25 @@ func (pp *p) destroy() {
 			mp.p.set(phold)
 		}
 		raceprocdestroy(pp.raceprocctx)
+		pp.raceprocctx = 0
+	}
+	if race2enabled {
+		if pp.timers.raceCtx != 0 {
+			// The race detector code uses a callback to fetch
+			// the proc context, so arrange for that callback
+			// to see the right thing.
+			// This hack only works because we are the only
+			// thread running.
+			mp := getg().m
+			phold := mp.p.ptr()
+			mp.p.set(pp)
+
+			race2ctxend(pp.timers.raceCtx)
+			pp.timers.raceCtx = 0
+
+			mp.p.set(phold)
+		}
+		race2procdestroy(pp.raceprocctx)
 		pp.raceprocctx = 0
 	}
 	pp.gcAssistTime = 0
@@ -7225,7 +7294,7 @@ func runqempty(pp *p) bool {
 // With the randomness here, as long as the tests pass
 // consistently with -race, they shouldn't have latent scheduling
 // assumptions.
-const randomizeScheduler = raceenabled
+const randomizeScheduler = isRaceEnabled // TODO: check this out
 
 // runqput tries to put g on the local runnable queue.
 // If next is false, runqput adds g to the tail of the runnable queue.

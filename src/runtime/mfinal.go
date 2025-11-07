@@ -215,6 +215,9 @@ func runFinalizers() {
 		if raceenabled {
 			racefingo()
 		}
+		if race2enabled {
+			race2fingo()
+		}
 		for fb != nil {
 			n := fb.cnt
 			for i := n; i > 0; i-- {

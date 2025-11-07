@@ -99,7 +99,7 @@ func InitConfig() {
 	_ = types.NewPtr(deferstruct())                                         // *runtime._defer
 	types.NewPtrCacheEnabled = false
 	ssaConfig = ssa.NewConfig(base.Ctxt.Arch.Name, *types_, base.Ctxt, base.Flag.N == 0, Arch.SoftFloat)
-	ssaConfig.Race = base.Flag.Race
+	ssaConfig.Race = base.Flag.IsRaceEnabled()
 	ssaCaches = make([]ssa.Cache, base.Flag.LowerC)
 
 	// Set up some runtime functions we'll need to call.
@@ -151,12 +151,17 @@ func InitConfig() {
 	ir.Syms.Panicnildottype = typecheck.LookupRuntimeFunc("panicnildottype")
 	ir.Syms.Panicoverflow = typecheck.LookupRuntimeFunc("panicoverflow")
 	ir.Syms.Panicshift = typecheck.LookupRuntimeFunc("panicshift")
-	ir.Syms.Racefuncenter = typecheck.LookupRuntimeFunc("racefuncenter")
-	ir.Syms.Racefuncexit = typecheck.LookupRuntimeFunc("racefuncexit")
-	ir.Syms.Raceread = typecheck.LookupRuntimeFunc("raceread")
-	ir.Syms.Racereadrange = typecheck.LookupRuntimeFunc("racereadrange")
-	ir.Syms.Racewrite = typecheck.LookupRuntimeFunc("racewrite")
-	ir.Syms.Racewriterange = typecheck.LookupRuntimeFunc("racewriterange")
+
+    var getRF = func (f string) *obj.LSym {
+		return typecheck.LookupRuntimeFunc(base.Flag.RacePrefix() + f)
+	}
+	ir.Syms.Racefuncenter = getRF("funcenter")
+	ir.Syms.Racefuncexit = getRF("funcexit")
+	ir.Syms.Raceread = getRF("read")
+	ir.Syms.Racereadrange = getRF("readrange")
+	ir.Syms.Racewrite = getRF("write")
+	ir.Syms.Racewriterange = getRF("writerange")
+
 	ir.Syms.TypeAssert = typecheck.LookupRuntimeFunc("typeAssert")
 	ir.Syms.WBZero = typecheck.LookupRuntimeFunc("wbZero")
 	ir.Syms.WBMove = typecheck.LookupRuntimeFunc("wbMove")
@@ -327,10 +332,10 @@ func buildssa(fn *ir.Func, worker int, isPgoHot bool) *ssa.Func {
 	s.checkPtrEnabled = ir.ShouldCheckPtr(fn, 1)
 
 	if base.Flag.Cfg.Instrumenting && fn.Pragma&ir.Norace == 0 && !fn.Linksym().ABIWrapper() {
-		if !base.Flag.Race || !objabi.LookupPkgSpecial(fn.Sym().Pkg.Path).NoRaceFunc {
+		if !base.Flag.IsRaceEnabled() || !objabi.LookupPkgSpecial(fn.Sym().Pkg.Path).NoRaceFunc {
 			s.instrumentMemory = true
 		}
-		if base.Flag.Race {
+		if base.Flag.IsRaceEnabled() {
 			s.instrumentEnterExit = true
 		}
 	}
@@ -1495,7 +1500,7 @@ func (s *state) instrument2(t *types.Type, addr, addr2 *ssa.Value, kind instrume
 			panic("unreachable")
 		}
 		needWidth = true
-	} else if base.Flag.Race && t.NumComponents(types.CountBlankFields) > 1 {
+	} else if base.Flag.IsRaceEnabled() && t.NumComponents(types.CountBlankFields) > 1 {
 		// for composite objects we have to write every address
 		// because a write might happen to any subobject.
 		// composites with only one element don't have subobjects, though.
@@ -1508,7 +1513,7 @@ func (s *state) instrument2(t *types.Type, addr, addr2 *ssa.Value, kind instrume
 			panic("unreachable")
 		}
 		needWidth = true
-	} else if base.Flag.Race {
+	} else if base.Flag.IsRaceEnabled() {
 		// for non-composite objects we can write just the start
 		// address, as any write must write the first byte.
 		switch kind {

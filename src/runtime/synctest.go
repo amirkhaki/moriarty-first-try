@@ -91,6 +91,11 @@ func (bubble *synctestBubble) changegstatus(gp *g, oldval, newval uint32) {
 				// any subsequent Wait.
 				racereleasemergeg(gp, bubble.raceaddr())
 			}
+			if race2enabled && newval != _Gdead && newval != _Gdeadextra {
+				// Record that this goroutine parking happens before
+				// any subsequent Wait.
+				race2releasemergeg(gp, bubble.raceaddr())
+			}
 		}
 	}
 	if bubble.total < 0 {
@@ -241,6 +246,11 @@ func synctestRun(f func()) {
 		// and Run returning.
 		raceacquireg(gp, gp.bubble.raceaddr())
 	}
+	if race2enabled {
+		// Establish a happens-before relationship between bubbled goroutines exiting
+		// and Run returning.
+		race2acquireg(gp, gp.bubble.raceaddr())
+	}
 	if total != 1 {
 		var reason string
 		if bubble.done {
@@ -310,6 +320,9 @@ func synctestWait() {
 	// goroutines in the bubble.
 	if raceenabled {
 		raceacquireg(gp, gp.bubble.raceaddr())
+	}
+	if race2enabled {
+		race2acquireg(gp, gp.bubble.raceaddr())
 	}
 }
 

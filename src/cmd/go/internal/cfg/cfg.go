@@ -88,6 +88,7 @@ var (
 	BuildPGO               string                  // -pgo flag
 	BuildPkgdir            string                  // -pkgdir flag
 	BuildRace              bool                    // -race flag
+	BuildRace2             bool                    // -race2 flag
 	BuildToolexec          []string                // -toolexec flag
 	BuildToolchainName     string
 	BuildToolchainCompiler func() string
@@ -112,6 +113,10 @@ var (
 	GOPATHChanged bool
 	CGOChanged    bool
 )
+
+func IsBuildRace() bool {
+	return BuildRace || BuildRace2
+}
 
 func defaultContext() build.Context {
 	ctxt := build.Default

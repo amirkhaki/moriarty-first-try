@@ -552,6 +552,9 @@ Read:
 		// atomics to read those queue indices.
 		raceacquire(unsafe.Pointer(&labelSync))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&labelSync))
+	}
 
 	return data[:di], tags[:ti], false
 }

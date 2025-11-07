@@ -352,7 +352,7 @@ const (
 
 	// randomizeHeapBase indicates if the heap base address should be randomized.
 	// See comment in mallocinit for how the randomization is performed.
-	randomizeHeapBase = goexperiment.RandomizedHeapBase64 && goarch.PtrSize == 8 && !isSbrkPlatform && !raceenabled && !msanenabled && !asanenabled
+	randomizeHeapBase = goexperiment.RandomizedHeapBase64 && goarch.PtrSize == 8 && !isSbrkPlatform && !isRaceEnabled && !msanenabled && !asanenabled 
 
 	// randHeapBasePrefixMask is used to extract the top byte of the randomized
 	// heap base address.
@@ -591,7 +591,7 @@ func mallocinit() {
 			// possible to use RISCV_HWPROBE_KEY_HIGHEST_VIRT_ADDRESS at some
 			// point in the future - for now use the system stack address.
 			vmaSize = sys.Len64(uint64(getg().m.g0.stack.hi)) + 1
-			if raceenabled && vmaSize != 39 && vmaSize != 48 {
+			if isRaceEnabled && vmaSize != 39 && vmaSize != 48 {
 				println("vma size = ", vmaSize)
 				throw("riscv64 vma size is unknown and race mode is enabled")
 			}
@@ -636,7 +636,7 @@ func mallocinit() {
 			// through about half the hints. In race mode, take only about
 			// a quarter; we don't have very much space to work with.
 			hintList := &mheap_.arenaHints
-			if (!raceenabled && i > 0x3f) || (raceenabled && i > 0x5f) {
+			if (!isRaceEnabled && i > 0x3f) || (isRaceEnabled && i > 0x5f) { //raceenabled
 				hintList = &mheap_.userArena.arenaHints
 			}
 			hint := (*arenaHint)(mheap_.arenaHintAlloc.alloc())
@@ -795,12 +795,12 @@ func (h *mheap) sysAlloc(n uintptr, hintList **arenaHint, arenaList *[]arenaIdx)
 	}
 
 	if size == 0 {
-		if raceenabled {
+		if isRaceEnabled {
 			// The race detector assumes the heap lives in
 			// [0x00c000000000, 0x00e000000000), but we
 			// just ran out of hints in this region. Give
 			// a nice failure.
-			throw("too many address space collisions for -race mode")
+			throw("too many address space collisions for -race(2) mode")
 		}
 
 		// All of the hints failed, so we'll take any
@@ -916,6 +916,9 @@ mapped:
 	// Tell the race detector about the new heap memory.
 	if raceenabled {
 		racemapshadow(v, size)
+	}
+	if race2enabled {
+		race2mapshadow(v, size)
 	}
 
 	return
@@ -1087,7 +1090,7 @@ const doubleCheckMalloc = false
 // mallocgc implementation: the experiment must be enabled, and none of the sanitizers should
 // be enabled. The tables used to select the size-specialized malloc function do not compile
 // properly on plan9, so size-specialized malloc is also disabled on plan9.
-const sizeSpecializedMallocEnabled = goexperiment.SizeSpecializedMalloc && GOOS != "plan9" && !asanenabled && !raceenabled && !msanenabled && !valgrindenabled
+const sizeSpecializedMallocEnabled = goexperiment.SizeSpecializedMalloc && GOOS != "plan9" && !asanenabled && !isRaceEnabled && !msanenabled && !valgrindenabled
 
 // Allocate an object of size bytes.
 // Small objects are allocated from the per-P cache's free lists.
@@ -1198,6 +1201,9 @@ func mallocgc(size uintptr, typ *_type, needzero bool) unsafe.Pointer {
 	// Notify sanitizers, if enabled.
 	if raceenabled {
 		racemalloc(x, size-asanRZ)
+	}
+	if race2enabled {
+		race2malloc(x, size-asanRZ)
 	}
 	if msanenabled {
 		msanmalloc(x, size-asanRZ)
@@ -1314,7 +1320,7 @@ func mallocgcTiny(size uintptr, typ *_type) (unsafe.Pointer, uintptr) {
 	(*[2]uint64)(x)[1] = 0
 	// See if we need to replace the existing tiny block with the new one
 	// based on amount of remaining free space.
-	if !raceenabled && (size < c.tinyoffset || c.tiny == 0) {
+	if !isRaceEnabled && (size < c.tinyoffset || c.tiny == 0) {
 		// Note: disabled when race detector is on, see comment near end of this function.
 		c.tiny = uintptr(x)
 		c.tinyoffset = size
@@ -1368,7 +1374,7 @@ func mallocgcTiny(size uintptr, typ *_type) (unsafe.Pointer, uintptr) {
 		}
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 		// Pad tinysize allocations so they are aligned with the end
 		// of the tinyalloc region. This ensures that any arithmetic
 		// that goes off the top end of the object will be detectable

@@ -139,6 +139,12 @@ func mapdelete(t *abi.MapType, m *maps.Map, key unsafe.Pointer) {
 		racewritepc(unsafe.Pointer(m), callerpc, pc)
 		raceReadObjectPC(t.Key, key, callerpc, pc)
 	}
+	if race2enabled && m != nil {
+		callerpc := sys.GetCallerPC()
+		pc := abi.FuncPCABIInternal(mapdelete)
+		race2writepc(unsafe.Pointer(m), callerpc, pc)
+		race2ReadObjectPC(t.Key, key, callerpc, pc)
+	}
 	if msanenabled && m != nil {
 		msanread(key, t.Key.Size_)
 	}
@@ -158,6 +164,10 @@ func mapIterStart(t *abi.MapType, m *maps.Map, it *maps.Iter) {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(mapIterStart))
 	}
+	if race2enabled && m != nil {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(mapIterStart))
+	}
 
 	it.Init(t, m)
 	it.Next()
@@ -170,16 +180,25 @@ func mapIterNext(it *maps.Iter) {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(it.Map()), callerpc, abi.FuncPCABIInternal(mapIterNext))
 	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(it.Map()), callerpc, abi.FuncPCABIInternal(mapIterNext))
+	}
 
 	it.Next()
 }
 
 // mapclear deletes all keys from a map.
 func mapclear(t *abi.MapType, m *maps.Map) {
-	if raceenabled && m != nil {
+	// if raceenabled && m != nil {
+	// 	callerpc := sys.GetCallerPC()
+	// 	pc := abi.FuncPCABIInternal(mapclear)
+	// 	racewritepc(unsafe.Pointer(m), callerpc, pc)
+	// }
+	if race2enabled && m != nil {
 		callerpc := sys.GetCallerPC()
 		pc := abi.FuncPCABIInternal(mapclear)
-		racewritepc(unsafe.Pointer(m), callerpc, pc)
+		race2writepc(unsafe.Pointer(m), callerpc, pc)
 	}
 
 	m.Clear(t)
@@ -289,6 +308,10 @@ func reflect_maplen(m *maps.Map) int {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(reflect_maplen))
 	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(reflect_maplen))
+	}
 	return int(m.Used())
 }
 
@@ -305,6 +328,10 @@ func reflectlite_maplen(m *maps.Map) int {
 	if raceenabled {
 		callerpc := sys.GetCallerPC()
 		racereadpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(reflect_maplen))
+	}
+	if race2enabled {
+		callerpc := sys.GetCallerPC()
+		race2readpc(unsafe.Pointer(m), callerpc, abi.FuncPCABIInternal(reflect_maplen))
 	}
 	return int(m.Used())
 }

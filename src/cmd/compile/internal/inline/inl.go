@@ -314,9 +314,9 @@ func InlineImpossible(fn *ir.Func) string {
 		return reason
 	}
 
-	// If marked "go:norace" and -race compilation, don't inline.
-	if base.Flag.Race && fn.Pragma&ir.Norace != 0 {
-		reason = "marked go:norace with -race compilation"
+	// If marked "go:norace" and -race(2) compilation, don't inline.
+	if base.Flag.IsRaceEnabled() && fn.Pragma&ir.Norace != 0 {
+		reason = "marked go:norace with -race(2) compilation"
 		return reason
 	}
 
@@ -1033,7 +1033,7 @@ func canInlineCallExpr(callerfn *ir.Func, n *ir.CallExpr, callee *ir.Func, bigCa
 		return false, 0, false
 	}
 
-	if base.Flag.Race && types.IsNoRacePkg(callee.Sym().Pkg) {
+	if base.Flag.IsRaceEnabled() && types.IsNoRacePkg(callee.Sym().Pkg) {
 		if log && logopt.Enabled() {
 			logopt.LogOpt(n.Pos(), "cannotInlineCall", "inline", ir.FuncName(callerfn),
 				fmt.Sprintf(`call to into "no-race" package function %s in race build`, ir.PkgFuncName(callee)))

@@ -393,6 +393,9 @@ func newTimer(when, period int64, f func(arg any, seq uintptr, delay int64), arg
 	if raceenabled {
 		racerelease(unsafe.Pointer(&t.timer))
 	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&t.timer))
+	}
 	if c != nil {
 		lockInit(&t.sendLock, lockRankTimerSend)
 		t.isChan = true
@@ -428,6 +431,9 @@ func stopTimer(t *timeTimer) bool {
 func resetTimer(t *timeTimer, when, period int64) bool {
 	if raceenabled {
 		racerelease(unsafe.Pointer(&t.timer))
+	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&t.timer))
 	}
 	if t.isFake && getg().bubble == nil {
 		fatal("reset of synctest timer from outside bubble")
@@ -1138,6 +1144,22 @@ func (t *timer) unlockAndRun(now int64, bubble *synctestBubble) {
 		}
 		raceacquirectx(tsLocal.raceCtx, unsafe.Pointer(t))
 	}
+	if race2enabled {
+		// Note that we are running on a system stack,
+		// so there is no chance of getg().m being reassigned
+		// out from under us while this function executes.
+		gp := getg()
+		var tsLocal *timers
+		if bubble == nil {
+			tsLocal = &gp.m.p.ptr().timers
+		} else {
+			tsLocal = &bubble.timers
+		}
+		if tsLocal.raceCtx == 0 {
+			tsLocal.raceCtx = race2gostart(abi.FuncPCABIInternal((*timers).run) + sys.PCQuantum)
+		}
+		race2acquirectx(tsLocal.raceCtx, unsafe.Pointer(t))
+	}
 
 	if t.state&(timerModified|timerZombie) != 0 {
 		badTimer()
@@ -1178,7 +1200,7 @@ func (t *timer) unlockAndRun(now int64, bubble *synctestBubble) {
 
 	t.unlock()
 
-	if raceenabled {
+	if isRaceEnabled {
 		// Temporarily use the current P's racectx for g0.
 		gp := getg()
 		if gp.racectx != 0 {
@@ -1254,6 +1276,11 @@ func (t *timer) unlockAndRun(now int64, bubble *synctestBubble) {
 			// the next synctest.Wait call.
 			racereleasemergeg(gp, bubble.raceaddr())
 		}
+		if race2enabled {
+			// Establish a happens-before between this timer event and
+			// the next synctest.Wait call.
+			race2releasemergeg(gp, bubble.raceaddr())
+		}
 		gp.bubble = nil
 	}
 
@@ -1261,7 +1288,7 @@ func (t *timer) unlockAndRun(now int64, bubble *synctestBubble) {
 		ts.lock()
 	}
 
-	if raceenabled {
+	if isRaceEnabled {
 		gp := getg()
 		gp.racectx = 0
 	}

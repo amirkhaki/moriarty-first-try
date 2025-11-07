@@ -393,6 +393,9 @@ func libinit(ctxt *Link) {
 	} else if *flagRace {
 		suffixsep = "_"
 		suffix = "race"
+	} else if *flagRace2 {
+		suffixsep = "_"
+		suffix = "race2"
 	} else if *flagMsan {
 		suffixsep = "_"
 		suffix = "msan"
@@ -554,6 +557,9 @@ func (ctxt *Link) loadlib() {
 	// load internal packages, if not already
 	if *flagRace {
 		loadinternal(ctxt, "runtime/race")
+	}
+	if *flagRace2 {
+		loadinternal(ctxt, "runtime/race2")
 	}
 	if *flagMsan {
 		loadinternal(ctxt, "runtime/msan")
@@ -1619,7 +1625,7 @@ func (ctxt *Link) hostlink() {
 				argv = append(argv, "-Wl,-no_pie")
 			}
 		}
-		if *flagRace && ctxt.HeadType == objabi.Hwindows {
+		if isFlagRace() && ctxt.HeadType == objabi.Hwindows {
 			// Current windows/amd64 race detector tsan support
 			// library can't handle PIE mode (see #53539 for more details).
 			// For now, explicitly disable PIE (since some compilers
@@ -1630,7 +1636,7 @@ func (ctxt *Link) hostlink() {
 		switch ctxt.HeadType {
 		case objabi.Hdarwin, objabi.Haix:
 		case objabi.Hwindows:
-			if *flagAslr && *flagRace {
+				if *flagAslr && isFlagRace() {
 				// Current windows/amd64 race detector tsan support
 				// library can't handle PIE mode (see #53539 for more details).
 				// Disable alsr if -race in effect.

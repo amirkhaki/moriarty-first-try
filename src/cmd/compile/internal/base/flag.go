@@ -117,6 +117,7 @@ type CmdFlags struct {
 	CoverageCfg        func(string) "help:\"read coverage configuration from `file`\""
 	Pack               bool         "help:\"write to file.a instead of file.o\""
 	Race               bool         "help:\"enable race detector\""
+	Race2               bool         "help:\"enable race2 detector\""
 	Shared             *bool        "help:\"generate code that can be linked into a shared library\"" // &Ctxt.Flag_shared, set below
 	SmallFrames        bool         "help:\"reduce the size limit for stack allocated objects\""      // small stacks, to diagnose GC latency; see golang.org/issue/27732
 	Spectre            string       "help:\"enable spectre mitigations in `list` (all, index, ret)\""
@@ -143,6 +144,17 @@ type CmdFlags struct {
 		// when the race detector is enabled.
 		Instrumenting bool
 	}
+}
+
+func (c CmdFlags) IsRaceEnabled() bool {
+	return c.Race || c.Race2
+}
+
+func (c CmdFlags) RacePrefix() string {
+	if c.Race2 {
+		return "race2"
+	}
+	return "race"
 }
 
 func addEnv(s string) {
@@ -294,6 +306,9 @@ func ParseFlags() {
 	if Flag.Race && !platform.RaceDetectorSupported(buildcfg.GOOS, buildcfg.GOARCH) {
 		log.Fatalf("%s/%s does not support -race", buildcfg.GOOS, buildcfg.GOARCH)
 	}
+	if Flag.Race2 && !platform.Race2DetectorSupported(buildcfg.GOOS, buildcfg.GOARCH) {
+		log.Fatalf("%s/%s does not support -race", buildcfg.GOOS, buildcfg.GOARCH)
+	}
 	if (*Flag.Shared || *Flag.Dynlink || *Flag.LinkShared) && !Ctxt.Arch.InFamily(sys.AMD64, sys.ARM, sys.ARM64, sys.I386, sys.Loong64, sys.MIPS64, sys.PPC64, sys.RISCV64, sys.S390X) {
 		log.Fatalf("%s/%s does not support -shared", buildcfg.GOOS, buildcfg.GOARCH)
 	}
@@ -344,9 +359,11 @@ func ParseFlags() {
 		log.Fatal("cannot use both -race and -asan")
 	case Flag.MSan && Flag.ASan:
 		log.Fatal("cannot use both -msan and -asan")
+	case Flag.Race && Flag.Race2:
+		log.Fatal("cannot use both -race and -race2")
 	}
-	if Flag.Race || Flag.MSan || Flag.ASan {
-		// -race, -msan and -asan imply -d=checkptr for now.
+	if Flag.Race || Flag.Race2 || Flag.MSan || Flag.ASan { 
+		// -race, -race2, -msan and -asan imply -d=checkptr for now.
 		if Debug.Checkptr == -1 { // if not set explicitly
 			Debug.Checkptr = 1
 		}
@@ -494,7 +511,7 @@ func concurrentBackendAllowed() bool {
 		return false
 	}
 	// TODO: fix races and enable the following flags
-	if Ctxt.Flag_dynlink || Flag.Race {
+	if Ctxt.Flag_dynlink || Flag.IsRaceEnabled() {
 		return false
 	}
 	return true

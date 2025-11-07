@@ -260,6 +260,14 @@ func racewrite(uintptr)
 func racereadrange(addr, size uintptr)
 func racewriterange(addr, size uintptr)
 
+//race2 detection
+func race2funcenter(uintptr)
+func race2funcexit()
+func race2read(uintptr)
+func race2write(uintptr)
+func race2readrange(addr, size uintptr)
+func race2writerange(addr, size uintptr)
+
 // memory sanitizer
 func msanread(addr, size uintptr)
 func msanwrite(addr, size uintptr)

@@ -335,6 +335,9 @@ func convT(t *_type, v unsafe.Pointer) unsafe.Pointer {
 	if raceenabled {
 		raceReadObjectPC(t, v, sys.GetCallerPC(), abi.FuncPCABIInternal(convT))
 	}
+	if race2enabled {
+		race2ReadObjectPC(t, v, sys.GetCallerPC(), abi.FuncPCABIInternal(convT))
+	}
 	if msanenabled {
 		msanread(v, t.Size_)
 	}
@@ -349,6 +352,9 @@ func convTnoptr(t *_type, v unsafe.Pointer) unsafe.Pointer {
 	// TODO: maybe take size instead of type?
 	if raceenabled {
 		raceReadObjectPC(t, v, sys.GetCallerPC(), abi.FuncPCABIInternal(convTnoptr))
+	}
+	if race2enabled {
+		race2ReadObjectPC(t, v, sys.GetCallerPC(), abi.FuncPCABIInternal(convTnoptr))
 	}
 	if msanenabled {
 		msanread(v, t.Size_)

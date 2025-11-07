@@ -164,13 +164,14 @@ func Main(archInit func(*ssagen.ArchInfo)) {
 
 	if objabi.LookupPkgSpecial(base.Ctxt.Pkgpath).NoInstrument {
 		base.Flag.Race = false
+		base.Flag.Race2 = false
 		base.Flag.MSan = false
 		base.Flag.ASan = false
 	}
 
 	ssagen.Arch.LinkArch.Init(base.Ctxt)
 	startProfile()
-	if base.Flag.Race || base.Flag.MSan || base.Flag.ASan {
+	if base.Flag.Race || base.Flag.Race2 || base.Flag.MSan || base.Flag.ASan {
 		base.Flag.Cfg.Instrumenting = true
 	}
 	if base.Flag.Dwarf {

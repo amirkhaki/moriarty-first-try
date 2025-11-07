@@ -796,6 +796,9 @@ func traceAdvance(stopTrace bool) {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&trace.doneSema[gen%2]))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&trace.doneSema[gen%2]))
+	}
 
 	// Double-check that things look as we expect after advancing and perform some
 	// final cleanup if the trace has fully stopped.
@@ -929,7 +932,7 @@ top:
 //
 //go:systemstack
 func readTrace0() (buf []byte, park bool) {
-	if raceenabled {
+	if isRaceEnabled {
 		// g0 doesn't have a race context. Borrow the user G's.
 		if getg().racectx != 0 {
 			throw("expected racectx == 0")
@@ -1011,6 +1014,12 @@ func readTrace0() (buf []byte, park bool) {
 					// race reports on writer passed to trace.Start.
 					racerelease(unsafe.Pointer(&trace.doneSema[gen%2]))
 				}
+				if race2enabled {
+					// Model synchronization on trace2.doneSema, which te race2
+					// detector does not see. This is required to avoid false
+					// race2 reports on writer passed to trace2.Start.
+					race2release(unsafe.Pointer(&trace.doneSema[gen%2]))
+				}
 				semrelease(&trace.doneSema[gen%2])
 
 				// We're shutting down, and the last generation is fully
@@ -1032,6 +1041,10 @@ func readTrace0() (buf []byte, park bool) {
 			if raceenabled {
 				// See comment above in the shutdown case.
 				racerelease(unsafe.Pointer(&trace.doneSema[gen%2]))
+			}
+			if race2enabled {
+				// See comment above in the shutdown case.
+				race2release(unsafe.Pointer(&trace.doneSema[gen%2]))
 			}
 			semrelease(&trace.doneSema[gen%2])
 
@@ -1169,9 +1182,15 @@ func (s *wakeableSleep) sleep(ns int64) {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&s.lock))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&s.lock))
+	}
 	wakeup := s.wakeup
 	if raceenabled {
 		racerelease(unsafe.Pointer(&s.lock))
+	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&s.lock))
 	}
 	unlock(&s.lock)
 	<-wakeup
@@ -1188,6 +1207,9 @@ func (s *wakeableSleep) wake() {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&s.lock))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&s.lock))
+	}
 	if s.wakeup != nil {
 		// Non-blocking send.
 		//
@@ -1201,6 +1223,9 @@ func (s *wakeableSleep) wake() {
 	}
 	if raceenabled {
 		racerelease(unsafe.Pointer(&s.lock))
+	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&s.lock))
 	}
 	unlock(&s.lock)
 }
@@ -1218,6 +1243,9 @@ func (s *wakeableSleep) close() {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&s.lock))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&s.lock))
+	}
 	wakeup := s.wakeup
 	s.wakeup = nil
 
@@ -1226,6 +1254,9 @@ func (s *wakeableSleep) close() {
 
 	if raceenabled {
 		racerelease(unsafe.Pointer(&s.lock))
+	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&s.lock))
 	}
 	unlock(&s.lock)
 	return

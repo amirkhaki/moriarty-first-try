@@ -47,11 +47,17 @@ func metricsLock() {
 	if raceenabled {
 		raceacquire(unsafe.Pointer(&metricsSema))
 	}
+	if race2enabled {
+		race2acquire(unsafe.Pointer(&metricsSema))
+	}
 }
 
 func metricsUnlock() {
 	if raceenabled {
 		racerelease(unsafe.Pointer(&metricsSema))
+	}
+	if race2enabled {
+		race2release(unsafe.Pointer(&metricsSema))
 	}
 	semrelease(&metricsSema)
 }

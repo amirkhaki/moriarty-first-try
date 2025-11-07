@@ -156,7 +156,7 @@ func walkSelectCases(cases []*ir.CommClause) []ir.Node {
 	order := typecheck.TempAt(base.Pos, ir.CurFunc, types.NewArray(types.Types[types.TUINT16], 2*int64(ncas)))
 
 	var pc0, pcs ir.Node
-	if base.Flag.Race {
+	if base.Flag.IsRaceEnabled() {
 		pcs = typecheck.TempAt(base.Pos, ir.CurFunc, types.NewArray(types.Types[types.TUINTPTR], int64(ncas)))
 		pc0 = typecheck.Expr(typecheck.NodAddr(ir.NewIndexExpr(base.Pos, pcs, ir.NewInt(base.Pos, 0))))
 	} else {
@@ -210,7 +210,7 @@ func walkSelectCases(cases []*ir.CommClause) []ir.Node {
 
 		// TODO(mdempsky): There should be a cleaner way to
 		// handle this.
-		if base.Flag.Race {
+		if base.Flag.IsRaceEnabled() {
 			r := mkcallstmt("selectsetpc", typecheck.NodAddr(ir.NewIndexExpr(base.Pos, pcs, ir.NewInt(base.Pos, int64(i)))))
 			init = append(init, r)
 		}
