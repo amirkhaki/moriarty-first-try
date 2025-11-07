@@ -1,3 +1,3 @@
 package runtime
 
-const isRaceEnabled bool = race2enabled
+const isRaceEnabled bool = raceenabled || race2enabled
